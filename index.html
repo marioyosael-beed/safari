@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Para ti 💖</title>
+    <style>
+        :root {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: #05010f;
+            overflow: hidden;
+            font-family: Georgia, "Times New Roman", serif;
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #ui {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            padding: max(env(safe-area-inset-top), 28px) 22px max(env(safe-area-inset-bottom), 30px);
+            pointer-events: none;
+        }
+
+        #msg {
+            font-style: italic;
+            line-height: 1.35;
+            font-size: clamp(21px, 5.6vw, 32px);
+            color: #ffd6e7;
+            text-shadow: 0 0 18px rgba(255, 70, 130, .75);
+            opacity: 0;
+            animation: aparece 2s .3s forwards;
+            transition: opacity .6s;
+        }
+
+        #giftWrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #gift {
+            pointer-events: auto;
+            background: none;
+            border: 0;
+            cursor: pointer;
+            font-size: 84px;
+            line-height: 1;
+            padding: 6px 14px;
+            filter: drop-shadow(0 0 20px #ff4d8d);
+            animation: bob 2.2s ease-in-out infinite;
+        }
+
+        #gift:focus-visible {
+            outline: 2px solid #ffd6e7;
+            outline-offset: 6px;
+            border-radius: 16px;
+        }
+
+        #gift.open {
+            animation: pop 1s forwards;
+        }
+
+        #hint {
+            font-size: 15px;
+            color: #ffb3d1;
+            opacity: .85;
+            transition: opacity .6s;
+        }
+
+        #ui.hide #msg,
+        #ui.hide #hint {
+            opacity: 0;
+        }
+
+        #final {
+            position: fixed;
+            left: 0;
+            right: 0;
+            text-align: center;
+            pointer-events: none;
+            bottom: max(env(safe-area-inset-bottom), 26px);
+            padding: 0 24px;
+        }
+
+        #final .l {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 2.2s ease, transform 2.2s ease;
+            text-shadow: 0 0 16px rgba(255, 90, 160, .8);
+        }
+
+        #final .l1 {
+            font-style: italic;
+            font-size: clamp(16px, 4.2vw, 22px);
+            color: #ffd6e7;
+            margin-bottom: 6px;
+            transition-delay: 1.5s;
+        }
+
+        #final .l2 {
+            font-size: clamp(14px, 3.6vw, 18px);
+            color: #e9c7ff;
+            margin-bottom: 12px;
+            transition-delay: 4s;
+        }
+
+        #final .l3 {
+            font-style: italic;
+            font-size: clamp(26px, 7.5vw, 44px);
+            color: #fff;
+            transition-delay: 6.5s;
+        }
+
+        #final.show .l {
+            opacity: 1;
+            transform: none;
+        }
+
+        @keyframes aparece {
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes bob {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-4deg);
+            }
+
+            50% {
+                transform: translateY(-12px) rotate(4deg) scale(1.07);
+            }
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            35% {
+                transform: scale(1.5) rotate(-10deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(7);
+                opacity: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #gift {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="c"></canvas>
+
+    <div id="ui">
+        <div id="msg"></div>
+        <div id="giftWrap">
+            <button id="gift" aria-label="Abrir el regalo">🎁</button>
+            <div id="hint">toca el regalo yeris</div>
+        </div>
+    </div>
+
+    <div id="final">
+        <div class="l l1">Eres mi galaxia favorita ✨ apesar de nuestras dificultades y errores, seguimos juntos</div>
+        <div class="l l2">Cada estrella de este cielo es una razón más para amarte, pero solo contal que seamos tu y yo
+        </div>
+        <div class="l l3" id="firma"></div>
+    </div>
+
+    <script>
+        // ====== PERSONALIZA AQUÍ ======
+        const NOMBRE = "Yeris";
+        // ==============================
+
+        document.getElementById('msg').innerHTML =
+            NOMBRE + ",<br> ve todo lo que siento por ti 💗";
+        document.getElementById('firma').textContent = "Te amo, " + NOMBRE + " 💖";
+
+        const cv = document.getElementById('c');
+        const ctx = cv.getContext('2d');
+        let W, H, R, DPR, TILT;
+
+        function resize() {
+            DPR = Math.min(window.devicePixelRatio || 1, 2);
+            W = window.innerWidth; H = window.innerHeight;
+            cv.width = W * DPR; cv.height = H * DPR;
+            R = Math.min(W * 0.98, H * 1.1);
+            TILT = W < H ? 0.75 : 0.6;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+        const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+        const PINKS = ['#ff5c93', '#ff8fb3', '#ffb3d1', '#ff3d7f', '#f0abfc', '#fda4af', '#ffd6e7'];
+
+        function heart(x, y, s) {
+            ctx.beginPath();
+            ctx.moveTo(x, y + s * 0.9);
+            ctx.bezierCurveTo(x - s * 1.6, y - s * 0.2, x - s * 0.7, y - s * 1.3, x, y - s * 0.45);
+            ctx.bezierCurveTo(x + s * 0.7, y - s * 1.3, x + s * 1.6, y - s * 0.2, x, y + s * 0.9);
+            ctx.closePath();
+        }
+
+        // ---------- Estrellas de fondo ----------
+        const stars = Array.from({ length: 180 }, () => ({
+            x: Math.random(), y: Math.random(), r: rnd(0.5, 1.6), p: rnd(0, 6.28), v: rnd(0.5, 2)
+        }));
+        function drawStars(t) {
+            for (const s of stars) {
+                const a = 0.35 + 0.65 * Math.abs(Math.sin(t * s.v + s.p));
+                ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+                ctx.fillRect(s.x * W, s.y * H, s.r, s.r);
+            }
+        }
+
+        // ---------- Sistema solar de "te amo" y corazones ----------
+        const orbits = [];
+        for (let i = 0; i < 6; i++) {
+            const n = 4 + i * 2, items = [];
+            for (let k = 0; k < n; k++) {
+                const isText = (k % 2 === 0);
+                items.push({
+                    a: (k / n) * Math.PI * 2 + rnd(-0.15, 0.15),
+                    text: isText, col: pick(PINKS),
+                    sz: isText ? rnd(0.9, 1.15) : rnd(0.8, 1.7)
+                });
+            }
+            orbits.push({ rf: 0.17 + i * 0.058, sp: (i % 2 ? -1 : 1) * 0.42 / (1 + i * 0.55), items });
+        }
+
+        let fade = 1;
+
+        function drawItem(e) {
+            const it = e[0], x = e[1], y = e[2], sn = e[3];
+            const depth = (sn + 1) / 2, sc = 0.72 + 0.4 * depth;
+            ctx.globalAlpha = fade * (0.55 + 0.45 * depth);
+            ctx.fillStyle = it.col;
+            if (it.text) {
+                ctx.font = 'italic ' + Math.round(R * 0.034 * sc * it.sz) + 'px Georgia, serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('te amo', x, y);
+            } else {
+                heart(x, y, R * 0.014 * sc * it.sz);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawSun(cx, cy, t) {
+            const beat = 1 + 0.08 * Math.sin(t * 3) + 0.04 * Math.sin(t * 7);
+            const s = R * 0.05 * beat;
+            ctx.globalAlpha = fade;
+            const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * 5);
+            g.addColorStop(0, 'rgba(255,80,140,.55)');
+            g.addColorStop(1, 'rgba(255,80,140,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(cx, cy, s * 5, 0, 6.283); ctx.fill();
+            ctx.shadowColor = '#ff2d75'; ctx.shadowBlur = 25;
+            const hg = ctx.createLinearGradient(cx, cy - s, cx, cy + s);
+            hg.addColorStop(0, '#ff9ec0'); hg.addColorStop(1, '#e11d64');
+            ctx.fillStyle = hg;
+            heart(cx, cy, s); ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+        }
+
+        function drawSolar(t) {
+            const cx = W / 2, cy = H * 0.5;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = fade;
+            ctx.strokeStyle = 'rgba(255,140,190,0.18)';
+            for (const o of orbits) {
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, o.rf * R, o.rf * R * TILT, 0, 0, 6.283);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            const back = [], front = [];
+            for (const o of orbits) {
+                for (const it of o.items) {
+                    const a = it.a + o.sp * t, sn = Math.sin(a);
+                    const x = cx + Math.cos(a) * o.rf * R, y = cy + sn * o.rf * R * TILT;
+                    (sn < 0 ? back : front).push([it, x, y, sn]);
+                }
+            }
+            back.forEach(drawItem);
+            drawSun(cx, cy, t);
+            front.forEach(drawItem);
+        }
+
+        // ---------- Viaje (warp) ----------
+        const streaks = Array.from({ length: 170 }, () => ({
+            a: rnd(0, 6.283), d: Math.random(), c: pick(['#ffffff', '#ffd6e7', '#ff8fb3', '#c4b5fd'])
+        }));
+        function drawWarp(w) {
+            const cx = W / 2, cy = H * 0.5, maxr = Math.hypot(W, H) / 2;
+            for (const s of streaks) {
+                const r = ((s.d + w * w * 2.5) % 1) * maxr;
+                const l = (3 + w * w * 0.35 * maxr) * (0.3 + r / maxr);
+                const r0 = Math.max(0, r - l);
+                ctx.strokeStyle = s.c;
+                ctx.globalAlpha = Math.min(1, w * 1.6) * (r / maxr);
+                ctx.lineWidth = 1 + w * 1.5;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(s.a) * r0, cy + Math.sin(s.a) * r0);
+                ctx.lineTo(cx + Math.cos(s.a) * r, cy + Math.sin(s.a) * r);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // ---------- Galaxia ----------
+        const ROT = -0.45, GTILT = 0.5;
+        let gal = [], gItems = [];
+
+        function initGalaxy() {
+            const N = W < 600 ? 1800 : 2800;
+            gal = [];
+            for (let i = 0; i < N; i++) {
+                const rn = Math.pow(Math.random(), 1.5);
+                const arm = i % 2;
+                const a0 = arm * Math.PI + rn * 2.6 * Math.PI + gauss() * 0.5 * (1 - rn * 0.6);
+                const hue = 335 - rn * 110;
+                const light = 88 - rn * 38;
+                gal.push({
+                    rn: rn, a0: a0, h: gauss() * (1 - rn) * 0.06, s: rnd(0.8, 2.2),
+                    col: 'hsla(' + hue.toFixed(0) + ',90%,' + light.toFixed(0) + '%,' + rnd(0.35, 0.9).toFixed(2) + ')'
+                });
+            }
+            gItems = [];
+            for (let i = 0; i < 70; i++) {
+                const rn = rnd(0.15, 0.98), arm = Math.random() < 0.5 ? 0 : 1;
+                gItems.push({
+                    rn: rn, a0: arm * Math.PI + rn * 2.6 * Math.PI + gauss() * 0.25,
+                    text: i % 7 < 3, col: pick(PINKS), sz: rnd(0.85, 1.2), ph: rnd(0, 6.28)
+                });
+            }
+        }
+
+        function drawGalaxy(gt, f) {
+            const cx = W / 2, cy = H * 0.46, MR = R * 0.5;
+            const cosR = Math.cos(ROT), sinR = Math.sin(ROT);
+            const grow = 1 - Math.pow(1 - f, 3);
+            const spin = gt * 0.12;
+
+            const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.9);
+            bg.addColorStop(0, 'rgba(120,30,110,' + (0.35 * f).toFixed(3) + ')');
+            bg.addColorStop(0.5, 'rgba(50,20,100,' + (0.2 * f).toFixed(3) + ')');
+            bg.addColorStop(1, 'rgba(5,1,15,0)');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+            ctx.globalCompositeOperation = 'lighter';
+            const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, MR * 0.5);
+            core.addColorStop(0, 'rgba(255,170,215,' + (0.6 * f).toFixed(3) + ')');
+            core.addColorStop(1, 'rgba(255,90,160,0)');
+            ctx.fillStyle = core;
+            ctx.beginPath(); ctx.arc(cx, cy, MR * 0.5, 0, 6.283); ctx.fill();
+
+            ctx.globalAlpha = f;
+            for (const p of gal) {
+                const r = p.rn * MR * grow, a = p.a0 + spin;
+                const x0 = Math.cos(a) * r, y0 = Math.sin(a) * r * GTILT + p.h * MR;
+                ctx.fillStyle = p.col;
+                ctx.fillRect(cx + x0 * cosR - y0 * sinR, cy + x0 * sinR + y0 * cosR, p.s, p.s);
+            }
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+
+            for (const it of gItems) {
+                const r = it.rn * MR * grow, a = it.a0 + spin, sn = Math.sin(a);
+                const x0 = Math.cos(a) * r, y0 = sn * r * GTILT;
+                const x = cx + x0 * cosR - y0 * sinR, y = cy + x0 * sinR + y0 * cosR;
+                const depth = (sn + 1) / 2, sc = 0.8 + 0.3 * depth;
+                ctx.globalAlpha = f * (0.55 + 0.45 * depth);
+                ctx.fillStyle = it.col;
+                if (it.text) {
+                    ctx.font = 'italic ' + Math.round(R * 0.03 * sc * it.sz) + 'px Georgia, serif';
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText('te amo', x, y);
+                } else {
+                    heart(x, y, R * 0.012 * sc * it.sz * (1 + 0.15 * Math.sin(gt * 3 + it.ph)));
+                    ctx.fill();
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // ---------- Corazones al tocar + estrellas fugaces ----------
+        const bursts = [], shooters = [];
+        cv.addEventListener('pointerdown', e => {
+            if (scene !== 'galaxy') return;
+            for (let i = 0; i < 12; i++) {
+                bursts.push({ x: e.clientX, y: e.clientY, vx: rnd(-70, 70), vy: rnd(-160, -40), life: 0, s: rnd(5, 11), col: pick(PINKS) });
+            }
+        });
+
+        function drawExtras(dt) {
+            for (let i = bursts.length - 1; i >= 0; i--) {
+                const b = bursts[i];
+                b.life += dt; b.x += b.vx * dt; b.y += b.vy * dt;
+                if (b.life > 1.6) { bursts.splice(i, 1); continue; }
+                ctx.globalAlpha = 1 - b.life / 1.6;
+                ctx.fillStyle = b.col;
+                heart(b.x, b.y, b.s); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            if (Math.random() < 0.012) {
+                shooters.push({ x: rnd(0, W), y: rnd(0, H * 0.4), vx: rnd(300, 520) * (Math.random() < 0.5 ? -1 : 1), vy: rnd(120, 220), life: 0 });
+            }
+            for (let i = shooters.length - 1; i >= 0; i--) {
+                const s = shooters[i];
+                s.life += dt; s.x += s.vx * dt; s.y += s.vy * dt;
+                if (s.life > 0.9) { shooters.splice(i, 1); continue; }
+                ctx.strokeStyle = 'rgba(255,255,255,' + (1 - s.life / 0.9).toFixed(2) + ')';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 0.12, s.y - s.vy * 0.12); ctx.stroke();
+            }
+        }
+
+        // ---------- Control de escenas ----------
+        let scene = 'solar', wStart = 0, gStart = 0, last = performance.now();
+        const t0 = last;
+        const gift = document.getElementById('gift');
+        const ui = document.getElementById('ui');
+        const finalBox = document.getElementById('final');
+
+        gift.addEventListener('click', () => {
+            if (scene !== 'solar') return;
+            scene = 'warp';
+            wStart = performance.now();
+            gift.classList.add('open');
+            ui.classList.add('hide');
+        });
+
+        function frame(now) {
+            const t = (now - t0) / 1000;
+            const dt = Math.min((now - last) / 1000, 0.05);
+            last = now;
+            ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+            ctx.fillStyle = '#05010f';
+            ctx.fillRect(0, 0, W, H);
+            drawStars(t);
+
+            if (scene === 'solar' || scene === 'warp') {
+                let w = 0;
+                if (scene === 'warp') w = Math.min((now - wStart) / 3200, 1);
+                ctx.save();
+                if (w > 0) {
+                    const sc = 1 + w * w * w * 14;
+                    ctx.translate(W / 2, H / 2);
+                    ctx.rotate(w * w * 0.6);
+                    ctx.scale(sc, sc);
+                    ctx.translate(-W / 2, -H / 2);
+                    fade = Math.max(0, 1 - Math.max(0, w - 0.35) / 0.45);
+                } else {
+                    fade = 1;
+                }
+                drawSolar(t);
+                ctx.restore();
+                if (w > 0) {
+                    drawWarp(w);
+                    if (w > 0.7) {
+                        const fl = Math.pow((w - 0.7) / 0.3, 1.5);
+                        ctx.fillStyle = 'rgba(255,225,240,' + fl.toFixed(3) + ')';
+                        ctx.fillRect(0, 0, W, H);
+                    }
+                }
+                if (scene === 'warp' && w >= 1) {
+                    scene = 'galaxy';
+                    gStart = now;
+                    initGalaxy();
+                    finalBox.classList.add('show');
+                }
+            } else {
+                const gt = (now - gStart) / 1000;
+                const f = Math.min(gt / 2.5, 1);
+                drawGalaxy(gt, f);
+                drawExtras(dt);
+                const fl = 1 - gt / 1.6;
+                if (fl > 0) {
+                    ctx.fillStyle = 'rgba(255,225,240,' + fl.toFixed(3) + ')';
+                    ctx.fillRect(0, 0, W, H);
+                }
+            }
+            requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    </script>
+</body>
+
+</html>
